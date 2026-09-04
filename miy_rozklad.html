@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Мій розклад</title>
+<style>
+:root{
+  --bg:#080c16; --card:#111827; --card2:#172033; --text:#f8fafc;
+  --muted:#aab4c5; --blue:#168bd1; --purple:#8d67b5; --orange:#9b5528;
+  --green:#3f9d72; --line:#263249; --accent:#fff;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;background:linear-gradient(180deg,#080c16 0%,#0d1423 100%);
+  color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  min-height:100vh;
+}
+.app{max-width:700px;margin:0 auto;padding:18px 14px 34px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+h1{font-size:28px;margin:0;font-weight:800;letter-spacing:-.5px}
+.date{color:var(--muted);font-size:13px;margin-top:4px}
+.icon-btn,.small-btn{
+  border:1px solid var(--line);background:#111827;color:#fff;border-radius:14px;
+  min-width:44px;min-height:44px;font-size:19px;cursor:pointer;
+}
+.switch{
+  display:grid;grid-template-columns:1fr 1fr;background:#111827;border:1px solid var(--line);
+  padding:4px;border-radius:16px;margin:12px 0 14px;gap:4px;position:sticky;top:8px;z-index:10;
+  box-shadow:0 8px 25px rgba(0,0,0,.25);
+}
+.switch button{
+  border:0;background:transparent;color:var(--muted);padding:12px 8px;border-radius:12px;
+  font-weight:800;font-size:15px;cursor:pointer;
+}
+.switch button.active{background:#fff;color:#0a0f1c}
+.todaybar{display:flex;gap:8px;margin-bottom:15px}
+.todaybar button{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:#111827;color:#fff;font-weight:700}
+.weeknote{
+  padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:#0f1727;
+  color:var(--muted);font-size:13px;margin-bottom:16px;line-height:1.35;
+}
+.day{margin:0 0 22px}
+.day-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:9px}
+.day-title h2{font-size:21px;margin:0}
+.day-title span{font-size:12px;color:var(--muted)}
+.lesson{
+  border-radius:15px;margin:8px 0;overflow:hidden;border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 7px 20px rgba(0,0,0,.16);
+}
+.lesson .top{
+  display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;font-weight:800;
+}
+.lesson .body{padding:10px 12px 12px}
+.lesson .name{font-size:15px;font-weight:800;line-height:1.25}
+.lesson .info{font-size:12px;color:#e7ebf2;margin-top:5px;line-height:1.35}
+.lesson .type{font-size:13px;color:#d9dee8;margin-top:3px}
+.blue{background:linear-gradient(135deg,#07558b,#0b416d)}
+.blue .top{background:#168bd1}
+.purple{background:linear-gradient(135deg,#493364,#3c2b54)}
+.purple .top{background:#8d67b5}
+.orange{background:linear-gradient(135deg,#7d3f1e,#673417)}
+.orange .top{background:#e07a2e}
+.gym{background:linear-gradient(135deg,#245e48,#1d4c3b)}
+.gym .top{background:#3f9d72}
+.gym .name{font-size:17px}
+.empty{padding:18px;border:1px dashed #34415a;border-radius:14px;color:var(--muted);text-align:center}
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.68);display:none;align-items:end;justify-content:center;
+  z-index:50;padding:12px;
+}
+.modal.show{display:flex}
+.sheet{
+  width:min(700px,100%);background:#111827;border:1px solid var(--line);border-radius:22px;
+  padding:18px;max-height:85vh;overflow:auto;
+}
+.sheet h3{margin:0 0 14px;font-size:20px}
+.sheet p{color:var(--muted);font-size:14px;line-height:1.45}
+.field{margin:14px 0}.field label{display:block;color:#dbe2ee;font-size:13px;margin-bottom:7px}
+.field input{
+  width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b1220;color:#fff;font-size:16px;
+}
+.actions{display:flex;gap:8px}.actions button{flex:1;padding:12px;border-radius:12px;border:0;font-weight:800}
+.save{background:#fff;color:#08101d}.close{background:#263249;color:#fff}
+@media (min-width:600px){.app{padding-top:28px}.lesson .name{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>📚 Мій розклад</h1>
+      <div class="date" id="dateText"></div>
+    </div>
+    <button class="icon-btn" onclick="openSettings()" aria-label="Налаштування">⚙️</button>
+  </div>
+
+  <div class="switch">
+    <button id="numeratorBtn" onclick="setWeek('numerator')">ЧИСЕЛЬНИК</button>
+    <button id="denominatorBtn" onclick="setWeek('denominator')">ЗНАМЕННИК</button>
+  </div>
+
+  <div class="todaybar">
+    <button onclick="scrollToday()">📍 Сьогодні</button>
+    <button onclick="toggleAuto()" id="autoBtn">🔄 Автовибір</button>
+  </div>
+
+  <div class="weeknote" id="weekNote">
+    Обери <b>чисельник</b> або <b>знаменник</b>. Якщо ввімкнути автовибір, сайт визначатиме тиждень за заданою датою початку чисельника.
+  </div>
+
+  <main id="schedule"></main>
+</div>
+
+<div class="modal" id="settingsModal">
+  <div class="sheet">
+    <h3>⚙️ Налаштування</h3>
+    <p>Для автоматичного перемикання введи дату понеділка, який у твоєму університеті є <b>чисельником</b>. Потім сайт сам чергуватиме тижні.</p>
+    <div class="field">
+      <label>Перший понеділок-чисельник</label>
+      <input id="startDate" type="date">
+    </div>
+    <div class="actions">
+      <button class="close" onclick="closeSettings()">Скасувати</button>
+      <button class="save" onclick="saveSettings()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const times = {
+  1:["08:30","09:50"], 2:["10:05","11:25"], 3:["11:40","13:00"], 4:["13:15","14:35"]
+};
+
+const schedule = {
+  numerator: {
+    "Понеділок":[
+      [1,"Основи програмування","Муха Т.О., 321 н.к.","Лекція","blue"],
+      [2,"Комп’ютерна дискретна математика","Моравський Р.О., 810 в н.к.","Лабораторна","purple"],
+      [3,"Іноземна мова за професійним спрямуванням, частина 1","Яніс М.П., 128 III н.к.","Практична","orange"],
+      [4,"Історія державності та культури України","Лехнюк Р.О., 321 н.к.","Лекція","blue"]
+    ],
+    "Вівторок":[
+      [1,"Лінійна алгебра та аналітична геометрія","Львів В.С., 103 IV н.к.","Практична","orange"],
+      [2,"Комп’ютерна дискретна математика","Хуравчак Л.М., 321 II н.к.","Лекція","blue"],
+      [3,"Комп’ютерна дискретна математика","Хуравчак Л.М., 809 V н.к.","Практична","orange"]
+    ],
+    "Середа":[
+      [2,"Фізичне виховання, частина 1","","Практична","orange"],
+      [3,"Основи програмування","Муха Т.О., 321 I н.к.","Лекція","blue"],
+      [4,"Математичний аналіз","Черкашина В.П., 225 II н.к.","Практична","orange"]
+    ],
+    "Четвер":[
+      [1,"Математичний аналіз","Андрусяк І.В., 321 I н.к.","Лекція","blue"],
+      [2,"Основи програмування","Терендій О.В., 809 V н.к.","Практична","orange"]
+    ],
+    "П’ятниця":[
+      [1,"Лінійна алгебра та аналітична геометрія","Львів В.С., 321 II н.к.","Лекція","blue"],
+      [2,"Основи програмування","Яцишин С.І., 812 V н.к.","Лабораторна","purple"]
+    ]
+  },
+  denominator: {
+    "Понеділок":[
+      [1,"Основи програмування","Муха Т.О., 321 н.к.","Лекція","blue"],
+      [2,"Комп’ютерна дискретна математика","Моравський Р.О., 810 в н.к.","Лабораторна","purple"],
+      [3,"Іноземна мова за професійним спрямуванням, частина 1","Яніс М.П., 128 III н.к.","Практична","orange"]
+    ],
+    "Вівторок":[
+      [1,"Лінійна алгебра та аналітична геометрія","Львів В.С., 103 IV н.к.","Практична","orange"],
+      [2,"Комп’ютерна дискретна математика","Хуравчак Л.М., 321 II н.к.","Лекція","blue"]
+    ],
+    "Середа":[
+      [2,"Фізичне виховання, частина 1","","Практична","orange"],
+      [4,"Математичний аналіз","Черкашина В.П., 225 II н.к.","Практична","orange"]
+    ],
+    "Четвер":[
+      [1,"Математичний аналіз","Андрусяк І.В., 321 I н.к.","Лекція","blue"],
+      [2,"Основи програмування","Терендій О.В., 809 V н.к.","Практична","orange"]
+    ],
+    "П’ятниця":[
+      [1,"Лінійна алгебра та аналітична геометрія","Львів В.С., 321 II н.к.","Лекція","blue"],
+      [2,"Основи програмування","Яцишин С.І., 812 V н.к.","Лабораторна","purple"],
+      [3,"Основи програмування","Яцишин С.І., 812 V н.к.","Лабораторна","purple"],
+      [4,"Історія державності та культури України","Лехнюк Р.О., 511 IV н.к.","Практична","orange"]
+    ]
+  }
+};
+
+const gym = {
+  numerator: {
+    "Понеділок":[["16:05","19:05","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Середа":[["07:00","08:45","🏋️ ЗАЛ","Тренування · 1 год 45 хв"]],
+    "П’ятниця":[["12:55","15:55","🏋️ ЗАЛ","Тренування · 3 години"]]
+  },
+  denominator: {
+    "Понеділок":[["14:30","17:30","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Середа":[["07:00","08:45","🏋️ ЗАЛ","Тренування · 1 год 45 хв"]],
+    "П’ятниця":[["16:05","19:05","🏋️ ЗАЛ","Тренування · 3 години"]]
+  }
+};
+
+const days=["Понеділок","Вівторок","Середа","Четвер","П’ятниця"];
+let currentWeek=localStorage.getItem("weekType") || "numerator";
+let autoMode=localStorage.getItem("autoMode")==="true";
+
+function getWeekType(){
+  if(!autoMode) return currentWeek;
+  const start=localStorage.getItem("startDate");
+  if(!start) return currentWeek;
+  const d=new Date(start+"T12:00:00");
+  const now=new Date();
+  const diff=Math.floor((now-d)/86400000);
+  const weeks=Math.floor(diff/7);
+  return (weeks%2===0) ? "numerator" : "denominator";
+}
+function setWeek(type){
+  currentWeek=type; localStorage.setItem("weekType",type);
+  render();
+}
+function toggleAuto(){
+  autoMode=!autoMode; localStorage.setItem("autoMode",autoMode);
+  if(autoMode && !localStorage.getItem("startDate")) openSettings();
+  render();
+}
+function render(){
+  const type=getWeekType();
+  document.getElementById("numeratorBtn").classList.toggle("active",type==="numerator");
+  document.getElementById("denominatorBtn").classList.toggle("active",type==="denominator");
+  document.getElementById("autoBtn").textContent=autoMode ? "🔄 Автовибір: ON" : "🔄 Автовибір";
+  document.getElementById("weekNote").innerHTML = autoMode
+    ? `Автовибір увімкнено: зараз <b>${type==="numerator"?"чисельник":"знаменник"}</b>.`
+    : `Ручний режим: зараз <b>${type==="numerator"?"чисельник":"знаменник"}</b>. Натисни кнопку зверху, щоб перемкнути.`;
+
+  const root=document.getElementById("schedule"); root.innerHTML="";
+  days.forEach(day=>{
+    const lessons=schedule[type][day] || [];
+    const gyms=gym[type][day] || [];
+    if(!lessons.length && !gyms.length) return;
+    const section=document.createElement("section");
+    section.className="day"; section.id="day-"+day;
+    section.innerHTML=`<div class="day-title"><h2>${day}</h2><span>${lessons.length ? lessons.length+" пар" : ""}</span></div>`;
+    lessons.forEach(x=>{
+      const [num,name,info,kind,cls]=x, t=times[num];
+      section.innerHTML+=`
+      <div class="lesson ${cls}">
+        <div class="top"><span>${num}</span><span>${t[0]} – ${t[1]}</span></div>
+        <div class="body"><div class="name">${name}</div>${info?`<div class="info">${info}</div>`:""}<div class="type">${kind}</div></div>
+      </div>`;
+    });
+    gyms.forEach(g=>{
+      section.innerHTML+=`
+      <div class="lesson gym">
+        <div class="top"><span>🏋️</span><span>${g[0]} – ${g[1]}</span></div>
+        <div class="body"><div class="name">${g[2]}</div><div class="type">${g[3]}</div></div>
+      </div>`;
+    });
+    root.appendChild(section);
+  });
+  updateDate();
+}
+function updateDate(){
+  const now=new Date();
+  document.getElementById("dateText").textContent=now.toLocaleDateString("uk-UA",{weekday:"long",day:"numeric",month:"long"});
+}
+function scrollToday(){
+  const map={1:"Понеділок",2:"Вівторок",3:"Середа",4:"Четвер",5:"П’ятниця"};
+  const day=map[new Date().getDay()];
+  if(day){document.getElementById("day-"+day)?.scrollIntoView({behavior:"smooth",block:"start"});}
+}
+function openSettings(){
+  document.getElementById("startDate").value=localStorage.getItem("startDate")||"";
+  document.getElementById("settingsModal").classList.add("show");
+}
+function closeSettings(){document.getElementById("settingsModal").classList.remove("show")}
+function saveSettings(){
+  const value=document.getElementById("startDate").value;
+  if(value) localStorage.setItem("startDate",value);
+  autoMode=true; localStorage.setItem("autoMode","true");
+  closeSettings(); render();
+}
+document.getElementById("settingsModal").addEventListener("click",e=>{
+  if(e.target.id==="settingsModal") closeSettings();
+});
+render();
+</script>
+</body>
+</html>
