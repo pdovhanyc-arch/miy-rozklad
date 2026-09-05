@@ -204,17 +204,23 @@ const schedule = {
 const gym = {
   numerator: {
     "Понеділок":[["16:05","19:05","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Вівторок":[["14:30","17:30","🏋️ ЗАЛ","Тренування · 3 години"]],
     "Середа":[["07:00","08:45","🏋️ ЗАЛ","Тренування · 1 год 45 хв"]],
-    "П’ятниця":[["12:55","15:55","🏋️ ЗАЛ","Тренування · 3 години"]]
+    "Четвер":[["12:55","15:55","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "П’ятниця":[["12:55","15:55","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Неділя":[["12:00","15:00","🏋️ ЗАЛ","Тренування · 3 години"]]
   },
   denominator: {
     "Понеділок":[["14:30","17:30","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Вівторок":[["14:30","17:30","🏋️ ЗАЛ","Тренування · 3 години"]],
     "Середа":[["07:00","08:45","🏋️ ЗАЛ","Тренування · 1 год 45 хв"]],
-    "П’ятниця":[["16:05","19:05","🏋️ ЗАЛ","Тренування · 3 години"]]
+    "Четвер":[["12:55","15:55","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "П’ятниця":[["16:05","19:05","🏋️ ЗАЛ","Тренування · 3 години"]],
+    "Неділя":[["12:00","15:00","🏋️ ЗАЛ","Тренування · 3 години"]]
   }
 };
 
-const days=["Понеділок","Вівторок","Середа","Четвер","П’ятниця"];
+const days=["Понеділок","Вівторок","Середа","Четвер","П’ятниця","Субота","Неділя"];
 let currentWeek=localStorage.getItem("weekType") || "numerator";
 let autoMode=localStorage.getItem("autoMode") === null ? true : localStorage.getItem("autoMode")==="true";
 
@@ -240,7 +246,7 @@ function toggleAuto(){
 let selectedDay = null;
 
 function getTodayName(){
-  const map={1:"Понеділок",2:"Вівторок",3:"Середа",4:"Четвер",5:"П’ятниця"};
+  const map={1:"Понеділок",2:"Вівторок",3:"Середа",4:"Четвер",5:"П’ятниця",6:"Субота",0:"Неділя"};
   return map[new Date().getDay()] || "Понеділок";
 }
 
@@ -286,10 +292,11 @@ function render(){
   days.forEach(day=>{
     const lessons=schedule[type][day] || [];
     const gyms=gym[type][day] || [];
-    if(!lessons.length && !gyms.length) return;
+    if(!lessons.length && !gyms.length && day!=="Субота") return;
     const section=document.createElement("section");
     section.className="day"; section.id="day-"+day;
     section.innerHTML=`<div class="day-title"><h2>${day}</h2><span>${lessons.length ? lessons.length+" пар" : ""}</span></div>`;
+    if(!lessons.length && !gyms.length){ section.innerHTML += `<div class="empty">Вільний день</div>`; }
     lessons.forEach(x=>{
       const [num,name,info,kind,cls]=x, t=times[num];
       section.innerHTML+=`
